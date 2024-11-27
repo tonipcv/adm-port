@@ -25,10 +25,10 @@ interface User {
 }
 
 function UserStatus({ status }: { status: string }) {
-  const colors = {
-    verified: 'bg-green-100 text-green-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    inactive: 'bg-red-100 text-red-800'
+  const styles = {
+    verified: 'bg-emerald-950/20 text-emerald-200',
+    pending: 'bg-amber-950/20 text-amber-200',
+    inactive: 'bg-red-950/20 text-red-200'
   };
 
   const labels = {
@@ -38,21 +38,21 @@ function UserStatus({ status }: { status: string }) {
   };
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs ${colors[status as keyof typeof colors]}`}>
+    <span className={`px-2.5 py-1 rounded-md text-xs font-medium inline-block ${styles[status as keyof typeof styles]}`}>
       {labels[status as keyof typeof labels]}
     </span>
   );
 }
 
 function UserPlan({ plan }: { plan: string }) {
-  const colors = {
-    free: 'bg-gray-100 text-gray-800',
-    premium: 'bg-purple-100 text-purple-800'
+  const styles = {
+    free: 'bg-gray-900 text-gray-300',
+    premium: 'bg-violet-950/20 text-violet-200'
   };
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs ${colors[plan as keyof typeof colors]}`}>
-      {plan}
+    <span className={`px-2.5 py-1 rounded-md text-xs font-medium inline-block ${styles[plan as keyof typeof styles]}`}>
+      {plan.charAt(0).toUpperCase() + plan.slice(1)}
     </span>
   );
 }
@@ -397,85 +397,101 @@ function UsersTable() {
 
   return (
     <>
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Plan</TableHead>
-              <TableHead>Subscription End</TableHead>
-              <TableHead>Portfolios</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <UserStatus status={user.status} />
-                </TableCell>
-                <TableCell>
-                  <UserPlan plan={user.plan} />
-                </TableCell>
-                <TableCell>
-                  {user.subscriptionEndDate ? (
-                    new Date(user.subscriptionEndDate).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  ) : (
-                    '-'
-                  )}
-                </TableCell>
-                <TableCell>{user.portfoliosCount}</TableCell>
-                <TableCell className="space-x-2">
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={() => setEditingUser(user)}
-                  >
-                    Edit
-                  </Button>
-                  {user.status === 'pending' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleResendConfirmation(user.id, user.email || '')}
-                    >
-                      Resend Confirmation
-                    </Button>
-                  )}
-                  <Button 
-                    variant="danger" 
-                    size="sm"
-                    onClick={async () => {
-                      if (window.confirm('Are you sure you want to delete this user?')) {
-                        try {
-                          const response = await fetch(`/api/users/${user.id}`, {
-                            method: 'DELETE'
-                          });
-                          if (!response.ok) throw new Error('Failed to delete user');
-                          setUsers(users.filter(u => u.id !== user.id));
-                        } catch (err) {
-                          alert('Failed to delete user');
-                        }
-                      }
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
+      <Card className="border-0 bg-gray-950 shadow-2xl">
+        <div className="relative w-full overflow-auto p-2">
+          <Table className="w-full">
+            <TableHeader>
+              <TableRow className="border-b border-gray-900">
+                <TableHead className="w-[200px] font-medium text-gray-400 h-12">Name</TableHead>
+                <TableHead className="w-[200px] font-medium text-gray-400">Email</TableHead>
+                <TableHead className="w-[150px] font-medium text-gray-400">Status</TableHead>
+                <TableHead className="w-[100px] font-medium text-gray-400">Plan</TableHead>
+                <TableHead className="w-[180px] font-medium text-gray-400">Subscription End</TableHead>
+                <TableHead className="w-[100px] font-medium text-gray-400 text-center">Portfolios</TableHead>
+                <TableHead className="w-[250px] font-medium text-gray-400 text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow 
+                  key={user.id}
+                  className="border-b border-gray-900 hover:bg-gray-900/50 transition-colors duration-200"
+                >
+                  <TableCell className="font-medium text-gray-200">{user.name}</TableCell>
+                  <TableCell className="text-gray-400">
+                    {user.email}
+                  </TableCell>
+                  <TableCell>
+                    <UserStatus status={user.status} />
+                  </TableCell>
+                  <TableCell>
+                    <UserPlan plan={user.plan} />
+                  </TableCell>
+                  <TableCell className="text-gray-400">
+                    {user.subscriptionEndDate ? (
+                      new Date(user.subscriptionEndDate).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm bg-gray-900 text-gray-300 font-medium">
+                      {user.portfoliosCount}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        className="bg-gray-900 hover:bg-gray-800 text-gray-300"
+                        onClick={() => setEditingUser(user)}
+                      >
+                        Edit
+                      </Button>
+                      {user.status === 'pending' && (
+                        <Button
+                          variant="secondary" 
+                          size="sm"
+                          className="border border-amber-950 bg-amber-950/20 hover:bg-amber-950/40 text-amber-200"
+                          onClick={() => handleResendConfirmation(user.id, user.email || '')}
+                        >
+                          Resend Confirmation
+                        </Button>
+                      )}
+                      <Button 
+                        variant="danger" 
+                        size="sm"
+                        className="bg-red-950/20 hover:bg-red-950/40 text-red-200"
+                        onClick={async () => {
+                          if (window.confirm('Are you sure you want to delete this user?')) {
+                            try {
+                              const response = await fetch(`/api/users/${user.id}`, {
+                                method: 'DELETE'
+                              });
+                              if (!response.ok) throw new Error('Failed to delete user');
+                              setUsers(users.filter(u => u.id !== user.id));
+                            } catch (err) {
+                              alert('Failed to delete user');
+                            }
+                          }
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
 
       {editingUser && (
