@@ -1,40 +1,45 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
-import { Button } from './button';
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
+interface ModalProps extends React.HTMLAttributes<HTMLDivElement> {
+  isOpen: boolean
+  onClose: () => void
+  title?: string
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
-  const [mounted, setMounted] = useState(false);
+const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
+  ({ className, children, isOpen, onClose, title, ...props }, ref) => {
+    if (!isOpen) return null
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-50 w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="p-4">
-          {children}
+    return (
+      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+        <div
+          ref={ref}
+          className={cn(
+            "relative bg-zinc-950 rounded-lg shadow-lg w-full max-w-lg border border-zinc-800",
+            className
+          )}
+          {...props}
+        >
+          {title && (
+            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+              <h2 className="text-lg font-medium text-zinc-200">{title}</h2>
+              <button
+                onClick={onClose}
+                className="text-zinc-400 hover:text-zinc-200"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <div className="p-4">{children}</div>
         </div>
       </div>
-    </div>
-  );
-} 
+    )
+  }
+)
+Modal.displayName = "Modal"
+
+export { Modal } 

@@ -2,8 +2,24 @@ import { Suspense } from 'react';
 import { Card } from "@/components/ui/card";
 import { getDashboardStats } from '@/services/dashboard';
 
+interface Activity {
+  id: string;
+  type: string;
+  description: string;
+  time: string;
+}
+
+interface DashboardStats {
+  stats: Array<{
+    name: string;
+    value: number | string;
+    change: string;
+  }>;
+  recentActivities: Activity[];
+}
+
 async function DashboardStats() {
-  const { stats, recentActivities } = await getDashboardStats();
+  const { stats, recentActivities } = await getDashboardStats() as DashboardStats;
 
   return (
     <>
@@ -28,7 +44,7 @@ async function DashboardStats() {
       <Card className="p-6">
         <h3 className="text-lg font-medium mb-4">Recent Activities</h3>
         <div className="space-y-4">
-          {recentActivities.map((activity) => (
+          {recentActivities?.map((activity: Activity) => (
             <div key={activity.id} className="flex items-start justify-between">
               <div>
                 <p className="font-medium">{activity.type}</p>

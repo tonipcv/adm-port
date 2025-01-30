@@ -16,29 +16,61 @@ import {
 
 interface User {
   id: string;
+  name: string | null;
+  email: string | null;
+  whatsapp: string | null;
+  whatsappVerified: boolean;
+  verificationCode: string | null;
+  verificationCodeExpiry: Date | null;
+  emailToken: string | null;
+  emailTokenExpiry: Date | null;
+  emailVerified: Date | null;
+  image: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resetToken: string | null;
+  resetTokenExpiry: Date | null;
+  stripeCustomerId: string | null;
+  subscriptionStatus: string | null;
+  subscriptionId: string | null;
+  subscriptionEndDate: string | null;
+  level: string | null;
+  exchange: string | null;
+  traditional_investment: string | null;
+  crypto_investment: string | null;
+  discovery: string | null;
+  onboardingCompleted: boolean;
+  provider: string | null;
+  portfoliosCount: number;
+  conversationsCount: number;
+}
+
+// Primeiro, vamos definir os tipos possíveis para subscriptionStatus
+type SubscriptionStatus = 'free' | 'premium';
+
+interface FormData {
   name: string;
   email: string;
-  status: string;
-  plan: string;
-  portfoliosCount: number;
-  subscriptionEndDate?: string | null;
+  subscriptionStatus: SubscriptionStatus; // Removendo o opcional e null
+  subscriptionEndDate: string;
+  autoDowngradeToFree?: boolean;
 }
 
 function UserStatus({ status }: { status: string }) {
   const styles = {
-    verified: 'bg-emerald-950/20 text-emerald-200',
-    pending: 'bg-amber-950/20 text-amber-200',
-    inactive: 'bg-red-950/20 text-red-200'
+    verified: 'bg-emerald-900/20 text-emerald-300 border border-emerald-900/50',
+    pending: 'bg-amber-900/20 text-amber-300 border border-amber-900/50',
+    inactive: 'bg-red-900/20 text-red-300 border border-red-900/50'
   };
 
   const labels = {
     verified: 'Verified',
-    pending: 'Pending Email Confirmation',
+    pending: 'Pending',
     inactive: 'Inactive'
   };
 
   return (
-    <span className={`px-2.5 py-1 rounded-md text-xs font-medium inline-block ${styles[status as keyof typeof styles]}`}>
+    <span className={`px-2 py-0.5 rounded-md text-xs font-medium inline-block ${styles[status as keyof typeof styles]}`}>
       {labels[status as keyof typeof labels]}
     </span>
   );
@@ -46,12 +78,12 @@ function UserStatus({ status }: { status: string }) {
 
 function UserPlan({ plan }: { plan: string }) {
   const styles = {
-    free: 'bg-gray-900 text-gray-300',
-    premium: 'bg-violet-950/20 text-violet-200'
+    free: 'bg-zinc-900/50 text-zinc-300 border border-zinc-800',
+    premium: 'bg-violet-900/20 text-violet-300 border border-violet-900/50'
   };
 
   return (
-    <span className={`px-2.5 py-1 rounded-md text-xs font-medium inline-block ${styles[plan as keyof typeof styles]}`}>
+    <span className={`px-2 py-0.5 rounded-md text-xs font-medium inline-block ${styles[plan as keyof typeof styles]}`}>
       {plan.charAt(0).toUpperCase() + plan.slice(1)}
     </span>
   );
@@ -62,13 +94,11 @@ function AddUserModal({ isOpen, onClose, onUserAdded }: {
   onClose: () => void;
   onUserAdded: () => void;
 }) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
-    password: '',
     subscriptionStatus: 'free',
-    subscriptionEndDate: '',
-    autoDowngradeToFree: false
+    subscriptionEndDate: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -118,10 +148,8 @@ function AddUserModal({ isOpen, onClose, onUserAdded }: {
       setFormData({
         name: '',
         email: '',
-        password: '',
         subscriptionStatus: 'free',
-        subscriptionEndDate: '',
-        autoDowngradeToFree: false
+        subscriptionEndDate: ''
       });
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to create user');
@@ -136,7 +164,7 @@ function AddUserModal({ isOpen, onClose, onUserAdded }: {
         <div>
           <label className="block text-sm font-medium mb-1">Name</label>
           <Input
-            value={formData.name}
+            value={formData.name || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             placeholder="Enter name"
             required
@@ -153,20 +181,10 @@ function AddUserModal({ isOpen, onClose, onUserAdded }: {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
-          <Input
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-            placeholder="Enter password"
-            required
-          />
-        </div>
-        <div>
           <label className="block text-sm font-medium mb-1">Subscription Status</label>
           <select
             value={formData.subscriptionStatus}
-            onChange={(e) => setFormData(prev => ({ ...prev, subscriptionStatus: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, subscriptionStatus: e.target.value as SubscriptionStatus }))}
             className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
             required
           >
@@ -184,18 +202,6 @@ function AddUserModal({ isOpen, onClose, onUserAdded }: {
                 onChange={(e) => setFormData(prev => ({ ...prev, subscriptionEndDate: e.target.value }))}
                 required={formData.subscriptionStatus === 'premium'}
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="autoDowngrade"
-                checked={formData.autoDowngradeToFree}
-                onChange={(e) => setFormData(prev => ({ ...prev, autoDowngradeToFree: e.target.checked }))}
-                className="rounded border-gray-300"
-              />
-              <label htmlFor="autoDowngrade" className="text-sm text-gray-600 dark:text-gray-300">
-                Automatically downgrade to free plan after subscription ends
-              </label>
             </div>
           </>
         )}
@@ -218,19 +224,19 @@ function EditUserModal({ isOpen, onClose, onUserUpdated, user }: {
   onUserUpdated: () => void;
   user: User;
 }) {
-  const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
-    subscriptionStatus: user.plan,
+  const [formData, setFormData] = useState<FormData>({
+    name: user.name || '',
+    email: user.email || '',
+    subscriptionStatus: (user.subscriptionStatus as SubscriptionStatus) || 'free',
     subscriptionEndDate: user.subscriptionEndDate || '',
     autoDowngradeToFree: false
   });
 
   useEffect(() => {
     setFormData({
-      name: user.name,
-      email: user.email,
-      subscriptionStatus: user.plan,
+      name: user.name || '',
+      email: user.email || '',
+      subscriptionStatus: (user.subscriptionStatus as SubscriptionStatus) || 'free',
       subscriptionEndDate: user.subscriptionEndDate || '',
       autoDowngradeToFree: false
     });
@@ -280,7 +286,7 @@ function EditUserModal({ isOpen, onClose, onUserUpdated, user }: {
         <div>
           <label className="block text-sm font-medium mb-1">Name</label>
           <Input
-            value={formData.name}
+            value={formData.name || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             placeholder="Enter name"
             required
@@ -300,7 +306,10 @@ function EditUserModal({ isOpen, onClose, onUserUpdated, user }: {
           <label className="block text-sm font-medium mb-1">Subscription Status</label>
           <select
             value={formData.subscriptionStatus}
-            onChange={(e) => setFormData(prev => ({ ...prev, subscriptionStatus: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ 
+              ...prev, 
+              subscriptionStatus: e.target.value as SubscriptionStatus 
+            }))}
             className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
             required
           >
@@ -369,106 +378,91 @@ function UsersTable() {
     fetchUsers();
   }, []);
 
-  const handleResendConfirmation = async (userId: string, email: string) => {
-    try {
-      const response = await fetch('/api/users/send-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, email }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to resend confirmation email');
-      }
-
-      alert('Confirmation email has been resent successfully');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to resend confirmation email';
-      alert(errorMessage);
-      console.error('Resend error:', error);
-    }
-  };
-
-  if (loading) return <div>Loading users...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) return <div className="text-zinc-400">Loading users...</div>;
+  if (error) return <div className="text-red-400">Error: {error}</div>;
 
   return (
     <>
-      <Card className="border-0 bg-gray-950 shadow-2xl">
-        <div className="relative w-full overflow-auto p-2">
+      <Card className="border-0 bg-zinc-950 shadow-lg">
+        <div className="relative w-full overflow-auto">
           <Table className="w-full">
             <TableHeader>
-              <TableRow className="border-b border-gray-900">
-                <TableHead className="w-[200px] font-medium text-gray-400 h-12">Name</TableHead>
-                <TableHead className="w-[200px] font-medium text-gray-400">Email</TableHead>
-                <TableHead className="w-[150px] font-medium text-gray-400">Status</TableHead>
-                <TableHead className="w-[100px] font-medium text-gray-400">Plan</TableHead>
-                <TableHead className="w-[180px] font-medium text-gray-400">Subscription End</TableHead>
-                <TableHead className="w-[100px] font-medium text-gray-400 text-center">Portfolios</TableHead>
-                <TableHead className="w-[250px] font-medium text-gray-400 text-right">Actions</TableHead>
+              <TableRow className="border-b border-zinc-900 hover:bg-transparent">
+                <TableHead className="w-[200px] font-medium text-zinc-400 h-10">Name</TableHead>
+                <TableHead className="w-[200px] font-medium text-zinc-400">Email</TableHead>
+                <TableHead className="w-[150px] font-medium text-zinc-400">Whatsapp</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400">Whatsapp Verified</TableHead>
+                <TableHead className="w-[150px] font-medium text-zinc-400">Email Verified</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400">Plan</TableHead>
+                <TableHead className="w-[180px] font-medium text-zinc-400">Subscription End</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400">Level</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400">Exchange</TableHead>
+                <TableHead className="w-[150px] font-medium text-zinc-400">Traditional Investment</TableHead>
+                <TableHead className="w-[150px] font-medium text-zinc-400">Crypto Investment</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400">Discovery</TableHead>
+                <TableHead className="w-[150px] font-medium text-zinc-400">Onboarding</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400">Provider</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400 text-center">Portfolios</TableHead>
+                <TableHead className="w-[100px] font-medium text-zinc-400 text-center">Conversations</TableHead>
+                <TableHead className="w-[150px] font-medium text-zinc-400">Created At</TableHead>
+                <TableHead className="w-[250px] font-medium text-zinc-400 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((user) => (
                 <TableRow 
                   key={user.id}
-                  className="border-b border-gray-900 hover:bg-gray-900/50 transition-colors duration-200"
+                  className="border-b border-zinc-900 hover:bg-zinc-900/30 transition-colors duration-200"
                 >
-                  <TableCell className="font-medium text-gray-200">{user.name}</TableCell>
-                  <TableCell className="text-gray-400">
-                    {user.email}
-                  </TableCell>
+                  <TableCell className="font-medium text-zinc-200">{user.name}</TableCell>
+                  <TableCell className="text-zinc-400">{user.email}</TableCell>
+                  <TableCell className="text-zinc-400">{user.whatsapp}</TableCell>
                   <TableCell>
-                    <UserStatus status={user.status} />
+                    <span className={`inline-block w-2 h-2 rounded-full ${user.whatsappVerified ? 'bg-emerald-500' : 'bg-red-500'}`} />
                   </TableCell>
+                  <TableCell className="text-zinc-400">
+                    {user.emailVerified ? new Date(user.emailVerified).toLocaleDateString('pt-BR') : '-'}
+                  </TableCell>
+                  <TableCell><UserPlan plan={user.subscriptionStatus || 'free'} /></TableCell>
+                  <TableCell className="text-zinc-400">
+                    {user.subscriptionEndDate ? new Date(user.subscriptionEndDate).toLocaleDateString('pt-BR') : '-'}
+                  </TableCell>
+                  <TableCell className="text-zinc-400">{user.level}</TableCell>
+                  <TableCell className="text-zinc-400">{user.exchange}</TableCell>
+                  <TableCell className="text-zinc-400">{user.traditional_investment}</TableCell>
+                  <TableCell className="text-zinc-400">{user.crypto_investment}</TableCell>
+                  <TableCell className="text-zinc-400">{user.discovery}</TableCell>
                   <TableCell>
-                    <UserPlan plan={user.plan} />
+                    <span className={`inline-block w-2 h-2 rounded-full ${user.onboardingCompleted ? 'bg-emerald-500' : 'bg-red-500'}`} />
                   </TableCell>
-                  <TableCell className="text-gray-400">
-                    {user.subscriptionEndDate ? (
-                      new Date(user.subscriptionEndDate).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
+                  <TableCell className="text-zinc-400">{user.provider}</TableCell>
                   <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm bg-gray-900 text-gray-300 font-medium">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-sm bg-zinc-900 text-zinc-300 font-medium border border-zinc-800">
                       {user.portfoliosCount}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-sm bg-zinc-900 text-zinc-300 font-medium border border-zinc-800">
+                      {user.conversationsCount}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-zinc-400">
+                    {new Date(user.createdAt).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button 
                         variant="secondary" 
                         size="sm"
-                        className="bg-gray-900 hover:bg-gray-800 text-gray-300"
+                        className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800"
                         onClick={() => setEditingUser(user)}
                       >
                         Edit
                       </Button>
-                      {user.status === 'pending' && (
-                        <Button
-                          variant="secondary" 
-                          size="sm"
-                          className="border border-amber-950 bg-amber-950/20 hover:bg-amber-950/40 text-amber-200"
-                          onClick={() => handleResendConfirmation(user.id, user.email || '')}
-                        >
-                          Resend Confirmation
-                        </Button>
-                      )}
                       <Button 
-                        variant="danger" 
+                        variant="destructive" 
                         size="sm"
-                        className="bg-red-950/20 hover:bg-red-950/40 text-red-200"
+                        className="bg-red-900/20 hover:bg-red-900/30 text-red-300 border border-red-900/50"
                         onClick={async () => {
                           if (window.confirm('Are you sure you want to delete this user?')) {
                             try {
@@ -509,6 +503,45 @@ function UsersTable() {
   );
 }
 
+function SyncButton() {
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = async () => {
+    try {
+      setIsSyncing(true);
+      const response = await fetch('/api/users/sync-to-make', {
+        method: 'POST'
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.error || 'Sync failed');
+      
+      alert(`
+        Sync successful!
+        Users synced: ${data.message}
+        Sample data: ${JSON.stringify(data.sampleData, null, 2)}
+      `);
+      
+    } catch (error) {
+      console.error('Sync error:', error);
+      alert('Failed to sync users to Make: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  return (
+    <Button 
+      onClick={handleSync}
+      disabled={isSyncing}
+      className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800"
+    >
+      {isSyncing ? 'Syncing...' : 'Sync to Make'}
+    </Button>
+  );
+}
+
 export default function UsersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [shouldRefetch, setShouldRefetch] = useState(false);
@@ -516,13 +549,17 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Users</h2>
+        <h2 className="text-xl font-medium text-zinc-100">Users</h2>
         <div className="flex gap-2">
           <Input 
             placeholder="Search users..." 
-            className="w-64"
+            className="w-64 bg-zinc-900 border-zinc-800 text-zinc-300 placeholder:text-zinc-500"
           />
-          <Button onClick={() => setIsAddModalOpen(true)}>
+          <SyncButton />
+          <Button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800"
+          >
             Add User
           </Button>
         </div>

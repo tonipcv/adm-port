@@ -3,42 +3,95 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { scheduleSubscriptionDowngrade } from '@/lib/subscription';
 
+const WEBHOOK_URL = 'https://hook.us1.make.com/6jot75gvs0fsosf8p271631htmbbijxu';
+
+async function sendToWebhook(users: any[]) {
+  const userData = users.map(user => ({
+    name: user.name,
+    email: user.email,
+    whatsapp: user.whatsapp
+  }));
+
+  try {
+    const response = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData)
+    });
+
+    if (!response.ok) {
+      console.error('Failed to send data to webhook:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error sending to webhook:', error);
+  }
+}
+
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
+      take: 100,
       select: {
         id: true,
         name: true,
         email: true,
-        subscriptionStatus: true,
-        subscriptionEndDate: true,
-        createdAt: true,
+        whatsapp: true,
+        whatsappVerified: true,
+        verificationCode: true,
+        verificationCodeExpiry: true,
+        emailToken: true,
+        emailTokenExpiry: true,
         emailVerified: true,
-        _count: {
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+        resetToken: true,
+        resetTokenExpiry: true,
+        stripeCustomerId: true,
+        subscriptionStatus: true,
+        subscriptionId: true,
+        subscriptionEndDate: true,
+        level: true,
+        exchange: true,
+        traditional_investment: true,
+        crypto_investment: true,
+        discovery: true,
+        onboardingCompleted: true,
+        provider: true,
+        portfolios: {
           select: {
-            portfolios: true
+            id: true
+          }
+        },
+        conversations: {
+          select: {
+            id: true
           }
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
       }
     });
 
-    const formattedUsers = users.map(user => ({
-      id: user.id,
-      name: user.name || 'Anonymous',
-      email: user.email || 'No email',
-      status: user.emailVerified ? 'verified' : 'pending',
-      plan: user.subscriptionStatus || 'free',
-      subscriptionEndDate: user.subscriptionEndDate?.toISOString() || null,
-      portfoliosCount: user._count.portfolios
+    // Enviar dados para o webhook
+    await sendToWebhook(users);
+
+    const usersWithCounts = users.map(user => ({
+      ...user,
+      portfoliosCount: user.portfolios.length,
+      conversationsCount: user.conversations.length,
+      portfolios: undefined,
+      conversations: undefined
     }));
 
-    return NextResponse.json(formattedUsers);
+    return NextResponse.json(usersWithCounts);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
+    console.error('Error fetching users:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to fetch users',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { status: 500 }
     );
   }

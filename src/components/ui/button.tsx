@@ -1,39 +1,38 @@
-import { ButtonHTMLAttributes } from 'react'
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger'
-  size?: 'sm' | 'md' | 'lg'
-}
+const Button = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "default" | "secondary" | "destructive"
+    size?: "default" | "sm" | "lg"
+  }
+>(({ className, variant = "default", size = "default", ...props }, ref) => {
+  const variants = {
+    default: "bg-zinc-900 text-zinc-300 hover:bg-zinc-800 border border-zinc-800",
+    secondary: "bg-zinc-900/50 text-zinc-300 hover:bg-zinc-800/50 border border-zinc-800",
+    destructive: "bg-red-900/20 text-red-300 hover:bg-red-900/30 border border-red-900/50",
+  }
 
-const variants = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700',
-  secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600',
-  danger: 'bg-red-600 text-white hover:bg-red-700'
-}
+  const sizes = {
+    default: "h-9 px-4 py-2",
+    sm: "h-8 px-3 text-sm",
+    lg: "h-10 px-6",
+  }
 
-const sizes = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2',
-  lg: 'px-6 py-3 text-lg'
-}
-
-export function Button({ 
-  className = '',
-  variant = 'primary',
-  size = 'md',
-  ...props 
-}: ButtonProps) {
   return (
     <button
-      className={`
-        inline-flex items-center justify-center rounded-md font-medium transition-colors
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
-        disabled:pointer-events-none disabled:opacity-50
-        ${variants[variant]}
-        ${sizes[size]}
-        ${className}
-      `}
+      ref={ref}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+        variants[variant],
+        sizes[size],
+        className
+      )}
       {...props}
     />
   )
-} 
+})
+Button.displayName = "Button"
+
+export { Button } 
